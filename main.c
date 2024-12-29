@@ -140,16 +140,77 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < tokens->length; i++) {
     // TODO use | instead of SIL for space char and do some sort of encoding like ||  = SIL SIL, ||| = SIL SIL SIL
     // aka the more | the longer the pause in sound
-    
-    if (strncmp(tokens->data[i], " ", strlen(" ")) == 0) {
-        if (list_append(a, phonemes, "SIL") == NULL) {
-          fprintf(stderr, "Failed to append phoneme to phonemes list\n");
-          sqlite3_close(db);
-          arena_free(a);
-          return 6;
-        }
-        continue;
+    if (strlen(tokens->data[i]) == 1) {
+      switch (tokens->data[i][0]) {
+        case ' ':
+          if (list_append(a, phonemes, "|") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        case '!':
+          if (list_append(a, phonemes, "||") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        case '?':
+          if (list_append(a, phonemes, "||") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        case ':':
+          if (list_append(a, phonemes, "||") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        case ';':
+          if (list_append(a, phonemes, "||") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        case '.':
+          if (list_append(a, phonemes, "||") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        case ',':
+          if (list_append(a, phonemes, "||") == NULL) {
+            fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+            sqlite3_close(db);
+            arena_free(a);
+            return 6;
+          }
+          continue;
+        default:;
+      }
     }
+    
+    //if (strncmp(tokens->data[i], " ", strlen(" ")) == 0) {
+    //    if (list_append(a, phonemes, "SIL") == NULL) {
+    //      fprintf(stderr, "Failed to append phoneme to phonemes list\n");
+    //      sqlite3_close(db);
+    //      arena_free(a);
+    //      return 6;
+    //    }
+    //    continue;
+    //}
 
     if (strlen(tokens->data[i]) > 1) {
       if(sqlite3_prepare_v2(db,
