@@ -201,16 +201,6 @@ int main(int argc, char **argv) {
         default:;
       }
     }
-    
-    //if (strncmp(tokens->data[i], " ", strlen(" ")) == 0) {
-    //    if (list_append(a, phonemes, "SIL") == NULL) {
-    //      fprintf(stderr, "Failed to append phoneme to phonemes list\n");
-    //      sqlite3_close(db);
-    //      arena_free(a);
-    //      return 6;
-    //    }
-    //    continue;
-    //}
 
     if (strlen(tokens->data[i]) > 1) {
       if(sqlite3_prepare_v2(db,
