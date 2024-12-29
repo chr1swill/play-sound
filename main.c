@@ -138,6 +138,9 @@ int main(int argc, char **argv) {
 
   sqlite3_stmt *stmt;
   for (size_t i = 0; i < tokens->length; i++) {
+    // TODO use | instead of SIL for space char and do some sort of encoding like ||  = SIL SIL, ||| = SIL SIL SIL
+    // aka the more | the longer the pause in sound
+    
     if (strncmp(tokens->data[i], " ", strlen(" ")) == 0) {
         if (list_append(a, phonemes, "SIL") == NULL) {
           fprintf(stderr, "Failed to append phoneme to phonemes list\n");
