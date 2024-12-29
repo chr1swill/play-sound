@@ -195,14 +195,6 @@ int main(int argc, char **argv) {
       }
     }
 
-    //rc = sqlite3_bind_text(stmt, 1, tokens->data[i], -1, SQLITE_STATIC);
-    //if (rc != SQLITE_OK) {
-    //  fprintf(stderr, "Failed to make statement with value: %s: %s\n", tokens->data[i], sqlite3_errmsg(db));
-    //  sqlite3_close(db);
-    //  arena_free(a);
-    //  return 4;
-    //}
-
     while (sqlite3_step(stmt) == SQLITE_ROW) {
       char *phoneme = (char *)sqlite3_column_text(stmt, 1);
       if (list_append(a, phonemes, phoneme) == NULL) {
