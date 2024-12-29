@@ -165,30 +165,22 @@ int main(int argc, char **argv) {
         return 4;
       }
     } else {
-      if(sqlite3_prepare_v2(db,
-          "select * from dict where word like ?;",
-          -1, &stmt, 0) != SQLITE_OK) {
-        fprintf(stderr, "Failed to create prepared statment: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        arena_free(a);
-        return 4;
-      }
+      char *pre_format_sql = "select * from dict where word like '%s%%';"; 
 
-      char *pattern = arena_alloc(a, strlen(tokens->data[i]) + 2);
-      if (pattern == NULL) {
+      int sql_len = strlen(pre_format_sql) + strlen(tokens->data[i]) + 3;
+      char *sql = arena_alloc(a, sql_len);
+      if (sql == NULL) {
         fprintf(stderr, "Error could not allocate memory for pattern: %s\n", tokens->data[i]);
         sqlite3_close(db);
         arena_free(a);
         return 4;
       }
 
-      pattern[strlen(tokens->data[i])] = '%';
-      pattern[strlen(tokens->data[i])+1] = '\0';
-      memmove(&pattern[0], tokens->data[i], strlen(tokens->data[i]));
-      printf("pattern: %s\n", pattern);
+      snprintf(sql, sql_len, pre_format_sql, tokens->data[i]);
 
-      if (sqlite3_bind_text(stmt, 1, tokens->data[i], -1, SQLITE_STATIC) != SQLITE_OK) {
-        fprintf(stderr, "Failed to make statement with value: %s: %s\n", pattern, sqlite3_errmsg(db));
+      if(sqlite3_prepare_v2(db,
+            sql,-1, &stmt, 0) != SQLITE_OK) {
+        fprintf(stderr, "Failed to create prepared statment: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         arena_free(a);
         return 4;
