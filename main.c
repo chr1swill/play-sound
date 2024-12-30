@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 #include <sqlite3.h>
 #include "arena.h"
 
@@ -21,11 +22,17 @@ List *list_new(Arena *a, size_t capacity) {
 }
 
 char *list_append(Arena *a, List *l, char *item) {
-  if (l->length + 1 > l->capacity) return NULL;
+  if (l->length + 1 > l->capacity) {
+    fprintf(stderr, "Error appending to list would exceed list capacity=%zu, size=%zu\n", l->capacity, l->length);
+    return NULL;
+  }
 
   size_t str_len = strlen(item) + 1;
   char *item_dup = arena_alloc(a, str_len);
-  if (item_dup == NULL) return NULL;
+  if (item_dup == NULL) {
+    fprintf(stderr, "Failed to allocate memory of size=%zu in arena to hold item\n", str_len);
+    return NULL;
+  }
 
   memmove(item_dup, item, str_len);
 
@@ -102,7 +109,7 @@ int main(int argc, char **argv) {
   int str_length = strlen(str);
   to_upper(str, str_length);
 
-  Arena *a = arena_new(2<<10);
+  Arena *a = arena_new(2<<14);
   if (a == NULL) {
     fprintf(stderr, "Error creating arena\n");
     return 2;
@@ -138,10 +145,14 @@ int main(int argc, char **argv) {
 
   sqlite3_stmt *stmt;
   for (size_t i = 0; i < tokens->length; i++) {
+    char *token = tokens->data[i];
+    int token_len = strlen(tokens->data[i]);
+    assert(token_len > 0);
+
     // TODO use | instead of SIL for space char and do some sort of encoding like ||  = SIL SIL, ||| = SIL SIL SIL
     // aka the more | the longer the pause in sound
-    if (strlen(tokens->data[i]) == 1) {
-      switch (tokens->data[i][0]) {
+    if (token_len == 1 && isalpha(token[0]) == 0) {
+      switch (token[0]) {
         case ' ':
           if (list_append(a, phonemes, "|") == NULL) {
             fprintf(stderr, "Failed to append phoneme to phonemes list\n");
@@ -202,7 +213,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    if (strlen(tokens->data[i]) > 1) {
+    if (isalpha(token[0]) != 0) {
       if(sqlite3_prepare_v2(db,
           "select * from dict where word = ?;",
           -1, &stmt, 0) != SQLITE_OK) {
@@ -212,8 +223,8 @@ int main(int argc, char **argv) {
         return 4;
       }
 
-      if (sqlite3_bind_text(stmt, 1, tokens->data[i], -1, SQLITE_STATIC) != SQLITE_OK) {
-        fprintf(stderr, "Failed to make statement with value: %s: %s\n", tokens->data[i], sqlite3_errmsg(db));
+      if (sqlite3_bind_text(stmt, 1, token, -1, SQLITE_STATIC) != SQLITE_OK) {
+        fprintf(stderr, "Failed to make statement with value: %s: %s\n", token, sqlite3_errmsg(db));
         sqlite3_close(db);
         arena_free(a);
         return 4;
@@ -221,16 +232,16 @@ int main(int argc, char **argv) {
     } else {
       char *pre_format_sql = "select * from dict where word like '%s%%';"; 
 
-      int sql_len = strlen(pre_format_sql) + strlen(tokens->data[i]) + 3;
+      int sql_len = strlen(pre_format_sql) + token_len + 3;
       char *sql = arena_alloc(a, sql_len);
       if (sql == NULL) {
-        fprintf(stderr, "Error could not allocate memory for pattern: %s\n", tokens->data[i]);
+        fprintf(stderr, "Error could not allocate memory for pattern: %s\n", token);
         sqlite3_close(db);
         arena_free(a);
         return 4;
       }
 
-      snprintf(sql, sql_len, pre_format_sql, tokens->data[i]);
+      snprintf(sql, sql_len, pre_format_sql, token);
 
       if(sqlite3_prepare_v2(db,
             sql,-1, &stmt, 0) != SQLITE_OK) {
@@ -241,8 +252,10 @@ int main(int argc, char **argv) {
       }
     }
 
+    printf("token=%s\n", token);
     while (sqlite3_step(stmt) == SQLITE_ROW) {
       char *phoneme = (char *)sqlite3_column_text(stmt, 1);
+      printf("phoneme=%s\n", phoneme);
       if (list_append(a, phonemes, phoneme) == NULL) {
         fprintf(stderr, "Failed to append phoneme to phonemes list\n");
         sqlite3_close(db);
